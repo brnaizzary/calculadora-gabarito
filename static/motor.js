@@ -3,13 +3,35 @@
 // Roda fora da tela para ela não travar durante o cálculo.
 "use strict";
 
-const BASE = new URL("../motor/", self.location.href).href;
+let BASE = self.location.protocol === "blob:" ? "" : new URL("../motor/", self.location.href).href;  // blob: arquivo único
 let py = null, laz = null, iniciando = null;
 
 function avisar(id, tipo, dado) { self.postMessage({ id, tipo, dado }); }
 
+// Versão em arquivo .html único (aberto direto do disco): a página manda todos os arquivos do motor já
+// lidos (cfg.embutido: caminho -> ArrayBuffer). Os pedidos a ENDERECO_EMBUTIDO são atendidos daqui.
+const ENDERECO_EMBUTIDO = "https://calculadora.embutido/";
+function usarEmbutidos(arquivos) {
+  const fetchRede = self.fetch.bind(self);
+  self.fetch = (recurso, opcoes) => {
+    const url = recurso instanceof Request ? recurso.url : String(recurso);  // texto, URL ou Request
+    if (!url.startsWith(ENDERECO_EMBUTIDO)) return fetchRede(recurso, opcoes);
+    const caminho = url.slice(ENDERECO_EMBUTIDO.length).split("?")[0];
+    const dado = arquivos[caminho];
+    if (!dado) return Promise.resolve(new Response("", { status: 404 }));
+    const tipo = caminho.endsWith(".wasm") ? "application/wasm" : "application/octet-stream";
+    return Promise.resolve(new Response(dado.slice(0), { status: 200, headers: { "Content-Type": tipo } }));
+  };
+  const script = (c) => URL.createObjectURL(new Blob([arquivos[c]], { type: "text/javascript" }));
+  // pyodide.asm.js carregado antes: o pyodide.js só busca o arquivo se _createPyodideModule não existir.
+  importScripts(script("pyodide/pyodide.js"), script("pyodide/pyodide.asm.js"), script("motor/laz-perf.js"));
+  BASE = ENDERECO_EMBUTIDO + "motor/";
+  return ENDERECO_EMBUTIDO + "pyodide/";
+}
+
 async function iniciar(cfg) {
-  importScripts(cfg.pyodide + "pyodide.js", BASE + "laz-perf.js");
+  if (cfg.embutido) cfg = { ...cfg, pyodide: usarEmbutidos(cfg.embutido), embutido: null };
+  else importScripts(cfg.pyodide + "pyodide.js", BASE + "laz-perf.js");
   const [p, l] = await Promise.all([
     loadPyodide({ indexURL: cfg.pyodide }),
     createLazPerf({ locateFile: (f) => BASE + f }),

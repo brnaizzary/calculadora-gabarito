@@ -1,7 +1,7 @@
 // Service worker da versão HTML: permite instalar o app e guarda no aparelho os arquivos grandes do
 // motor (Python no navegador, cerca de 30 MB), para que só o primeiro acesso seja lento.
 // Os dados do GeoSampa não passam por aqui (ficam no cache do próprio motor).
-const VERSAO = "5da8d379df";
+const VERSAO = "85c996e097";
 const CACHE = "motor-" + VERSAO;
 const AVISO = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Calculadora · Quebra de Gabarito</title>

@@ -4,7 +4,17 @@
 "use strict";
 (() => {
   const CFG = window.CALC_CONFIG;
-  const motor = new Worker("static/motor.js?v=" + CFG.versao);
+  // Arquivo .html único: os arquivos do motor vêm embutidos na página (base64), não de uma pasta.
+  const embutidos = [...document.querySelectorAll("script[data-arquivo]")];
+  const textoMotor = embutidos.find((e) => e.dataset.arquivo === "static/motor.js");
+  const motor = textoMotor
+    ? new Worker(URL.createObjectURL(new Blob([base64(textoMotor.textContent)], { type: "text/javascript" })))
+    : new Worker("static/motor.js?v=" + CFG.versao);
+  function base64(texto) {
+    const bin = atob(texto.trim()), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
   const pendentes = new Map();
   let seq = 0;
 
@@ -28,7 +38,8 @@
 
   // Endereços relativos valem a partir da página (o motor roda em static/).
   const pronto = chamar("iniciar", { ...CFG, pyodide: new URL(CFG.pyodide, location.href).href,
-    relay: new URL(CFG.relay || ".", location.href).href, site: new URL(".", location.href).href });
+    relay: new URL(CFG.relay || ".", location.href).href, site: new URL(".", location.href).href,
+    embutido: textoMotor ? Object.fromEntries(embutidos.map((e) => [e.dataset.arquivo, base64(e.textContent)])) : null });
   pronto.catch(() => {});
 
   // ---- etapa extra no painel de progresso: carregar o motor (só demora no 1º acesso).
