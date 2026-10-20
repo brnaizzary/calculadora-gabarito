@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- Cartão de pré-visualização quando o link é compartilhado (WhatsApp, Teams, e-mail): logo no início do
+     <head>, com endereço completo da imagem (preenchido pelo servidor em app/main.py). -->
+<meta property="og:site_name" content="R.Yazbek · Novos Negócios">
+<meta property="og:title" content="Calculadora · Quebra de Gabarito">
+<meta property="og:description" content="R.Yazbek · Novos Negócios: teste do art. 60, II por Quadra Fiscal.">
+<meta property="og:image" content="https://brnaizzary.github.io/calculadora-gabarito/static/cartao_app.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://brnaizzary.github.io/calculadora-gabarito/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora · Quebra de Gabarito</title>
+<meta name="description" content="R.Yazbek · Novos Negócios: teste do art. 60, II da Lei 16.402/2016 por Quadra Fiscal.">
+<meta name="theme-color" content="#231f1b">
+<!-- App instalável: ícone e nome na tela inicial do celular e na janela do computador -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="static/logo-ry.svg?v=2026-10-20e">
+<link rel="icon" type="image/png" sizes="192x192" href="static/icone-192.png">
+<link rel="apple-touch-icon" href="static/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quebra de Gabarito">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="static/style.css?v=2026-10-20g">
+</head>
+<body>
+<header class="topo">
+  <img class="logo logo-ry" src="static/logo-ry.svg?v=2026-10-20e" alt="R.Y">
+  <div class="titulo"><h1>Calculadora · Quebra de Gabarito</h1><small>R.Yazbek · Novos Negócios</small></div>
+</header>
+
+<main>
+  <section class="entrada card">
+    <form id="form">
+      <label>Setor<input id="setor" inputmode="numeric" placeholder="011" maxlength="3" autocomplete="off"></label>
+      <label>Quadra<input id="quadra" inputmode="numeric" placeholder="089" maxlength="3" autocomplete="off"></label>
+      <button type="submit" class="primario">Analisar</button>
+      <button type="button" id="refazer" class="secundario refazer" title="Nova busca: limpa o estudo da tela" aria-label="Nova busca: limpa o estudo da tela">&#x21BA;</button>
+    </form>
+    <p id="aviso-campos" class="aviso-campos" role="status" hidden><span class="i" aria-hidden="true">i</span>
+      <span>Preencha o Setor e a Quadra fiscal para fazer a análise.</span></p>
+    <label class="soltar" id="soltar">
+      <input type="file" id="arquivo" accept="image/png,image/jpeg,image/webp" hidden>
+      <strong>Arraste o print da quadra aqui</strong> ou clique para escolher<br>
+      <small>GeoSampa, Google Maps ou ficha técnica. O app lê SQL, ruas e números e pede sua confirmação antes de calcular.</small>
+    </label>
+  </section>
+
+  <section id="identificacao" class="card" hidden>
+    <h2 class="ident-titulo">Quadra identificada pelo print</h2>
+    <p id="ident-msg"></p>
+    <div id="candidatos" class="candidatos"></div>
+    <details><summary>Texto lido na imagem</summary><pre id="texto-lido"></pre></details>
+  </section>
+
+  <section id="progresso" class="card" hidden>
+    <ol id="etapas"></ol>
+    <p id="tempo" class="dica"></p>
+  </section>
+
+  <section id="erro" class="card falha" hidden></section>
+
+  <section id="resultado" hidden>
+    <div id="veredito" class="card veredito">
+      <p class="rotulo">Quebra de gabarito</p>
+      <p id="v-texto" class="v-texto"></p>
+      <p id="v-frase" class="v-frase"></p>
+      <p id="v-nota" class="v-nota"></p>
+      <div class="params">
+        <div id="v-zona" class="v-zona"></div>
+      </div>
+    </div>
+
+    <div id="alertas"></div>
+
+    <div class="card mapa">
+      <div class="mapa-topo">
+        <h2>Mapa da quadra</h2>
+        <div class="alternar" role="group" aria-label="Base de área no mapa">
+          <button type="button" data-modo="mdc" class="ativo">Áreas MDC</button>
+          <button type="button" data-modo="iptu">Áreas IPTU</button>
+        </div>
+      </div>
+      <div id="mapa-svg"></div>
+      <div class="estudo">
+        <span class="estudo-rotulo">Terreno em estudo: <strong id="estudo-lista">nenhum</strong></span>
+        <button type="button" id="estudo-destacar" class="secundario">Destacar no mapa</button>
+        <button type="button" id="estudo-limpar" class="secundario" hidden>Limpar</button>
+      </div>
+      <p id="estudo-aviso" class="dica"></p>
+    </div>
+
+    <div class="bases">
+      <div class="card base" id="base-iptu"></div>
+      <div class="card base" id="base-mdc"></div>
+    </div>
+
+    <details class="card" id="tab-lotes">
+      <summary>Lotes da quadra <span id="n-lotes"></span></summary>
+      <div class="lotes-acoes">
+        <p class="dica" id="lotes-dica">Clique no cabeçalho para ordenar.</p>
+        <button type="button" id="manual-abrir" class="secundario">Informar altura manualmente</button>
+        <button type="button" id="manual-desfazer" class="secundario" hidden>Desfazer (voltar à medida automática)</button>
+      </div>
+      <div class="rolagem"><table id="tabela"><thead></thead><tbody></tbody></table></div>
+    </details>
+
+    <details class="card" id="tab-zonas">
+      <summary>Tabela de gabaritos (Quadro 3)</summary>
+      <p class="dica">Gabarito máximo por zona, conforme o Quadro 3 da Lei 16.402/2016 com a redação vigente. Zonas da quadra aparecem primeiro;
+        as que ainda não têm valor ficam em destaque. Marque "Sem limite" para zonas sem gabarito máximo e "Confirmado" depois de conferir no texto legal.</p>
+      <div class="rolagem"><table class="zonas"><thead><tr><th>Zona</th><th>Gabarito (m)</th><th>Sem limite</th><th>Confirmado</th><th>Observação / fonte</th></tr></thead>
+        <tbody id="zonas-corpo"></tbody></table></div>
+      <div class="zonas-acoes">
+        <label>Nova zona<input id="zonas-sigla" placeholder="ex.: ZCOR-2" maxlength="12" autocomplete="off"></label>
+        <button type="button" class="secundario" id="zonas-nova">Adicionar</button>
+        <button type="button" class="primario" id="zonas-salvar">Salvar tabela e recalcular</button>
+      </div>
+      <p id="zonas-msg" class="dica"></p>
+    </details>
+
+    <details class="card">
+      <summary>Conferências e fontes</summary>
+      <h3>Validações</h3><ul id="validacoes" class="lista"></ul>
+      <h3>Fontes consultadas</h3><ul id="fontes" class="lista"></ul>
+    </details>
+
+    <details class="card">
+      <summary>Critério de lote edificado</summary>
+      <p class="dica">Informativo. A metodologia do app é fixa; este critério só entra em "Área edificada" e "% Área edificada",
+        que não interferem no resultado legal (art. 60, II).</p>
+      <p id="criterio-texto"></p>
+    </details>
+
+    <details class="card">
+      <summary>Base legal e limitações</summary>
+      <ul id="legal" class="lista"></ul>
+      <h3>Limitações</h3><ul id="limitacoes" class="lista"></ul>
+    </details>
+
+    <div class="acoes">
+      <button class="secundario" id="btn-pdf">Gerar relatório (PDF)</button>
+      <button class="secundario" id="btn-xlsx">Exportar planilha (.xlsx)</button>
+      <button class="primario" id="copiar">Copiar resumo</button>
+    </div>
+  </section>
+
+  <dialog id="dlg-manual" class="dialogo" aria-labelledby="dlg-titulo">
+    <form method="dialog" id="dlg-form">
+      <h3 id="dlg-titulo">Informar altura manualmente</h3>
+      <p class="info"><span class="i" aria-hidden="true">i</span>
+        <span>As alturas que você informar substituirão a medida automática (LiDAR 2020 ou MDC 2007) nos lotes preenchidos
+        e passarão a valer no cálculo do art. 60, II. Lotes deixados em branco continuam com a medida automática.</span></p>
+      <label>Base de referência das alturas (será o título da coluna)
+        <input id="dlg-ref" maxlength="40" required autocomplete="off" placeholder="ex.: Alvará, Projeto aprovado, Levantamento topográfico"></label>
+      <div class="dlg-acoes">
+        <button type="button" id="dlg-cancelar" class="secundario">Cancelar</button>
+        <button type="submit" class="primario">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <p class="escopo" id="escopo">Indicativo técnico; não substitui consulta à SMUL nem análise do COMAER/DECEA.</p>
+</main>
+<script src="static/config-web.js?v=5da8d379df"></script>
+<script src="static/ponte.js?v=5da8d379df"></script>
+<script src="static/app.js?v=2026-10-20h"></script>
+</body>
+</html>
